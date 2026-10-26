@@ -1,24 +1,24 @@
-# Web dashboard
+# Web Dashboard — Project Record
 
-A static HTML dashboard for viewing Console Connect player profiles and saved high scores. The dashboard source is `index.html` and can be deployed directly to Vercel without a build step.
+This folder contains a static HTML/CSS/JavaScript dashboard snapshot for viewing Console Connect player profiles and saved high scores.
 
-## Configure
+It is included to document the web portion of the project and how it was intended to communicate with the Supabase Edge Function. It is **not a guarantee that this copy is identical to the separately hosted dashboard or ready to deploy unchanged**.
 
-Set `API_URL` to your Supabase Edge Function URL and `SUPABASE_ANON_KEY` to the project's public anon/publishable key. These are public client-side values. Never put a Supabase service-role/secret key in this file.
+## What it demonstrates
 
-## Deploy to Vercel
+- A browser-based dashboard for player records and game high scores
+- A client request to the shared `console-api` endpoint
+- Rendering API data in a searchable player view
+- A simple static frontend without a build step
 
-1. Import this repository into Vercel and set `web-dashboard` as its Root Directory.
-2. Use the static/no-framework configuration; no build command is needed.
-3. Deploy and open the resulting URL.
+## Configuration notes
 
-From this folder, the Vercel CLI commands are:
+The source contains placeholder values for the API URL and public anon/publishable key. Those placeholders are intentional in this repository snapshot. Do not add private credentials or a Supabase service-role key to browser code.
 
-```bash
-vercel
-vercel --prod
-```
+## Deployment status
 
-## How it works
+The existing hosted dashboard is managed separately. This repository is being maintained as a project record, so there is no Git-connected deployment workflow documented here. The presence of `vercel.json` records the static hosting configuration, but does not mean the GitHub repository is connected to Vercel.
 
-The browser sends a POST request with `{ "action": "dashboard" }` to `console-api`. The function reads users and scores from PostgreSQL and returns JSON. The page renders a searchable grid of users and their six game scores. The dashboard does not query the database directly and does not need the service-role key.
+## Important limitation
+
+The dashboard calls an API whose source in this repository has not been verified as an exact copy of the deployed Edge Function. Treat this folder as a documented implementation snapshot, not a reproducible production release.
