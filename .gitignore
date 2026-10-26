@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+secrets.*
+*.local
+.vscode/
+.idea/
+build/
+.cache/
+*.elf
+*.hex
+*.bin
+*.map
+*.o
+*.d
+.DS_Store
+Thumbs.db
