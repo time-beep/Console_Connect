@@ -1,30 +1,29 @@
-# console-api Edge Function
+# `console-api` — Edge Function Notes
 
-This function is the shared HTTP API used by the ESP32 console and web dashboard.
+This folder documents the API layer intended to be shared by the ESP32 console and the web dashboard.
 
-## Runtime secrets
+## Recorded API contract
 
-The function reads these server-side environment variables:
+The known actions are:
 
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+| Action | Purpose |
+|---|---|
+| `list_users` | List player usernames |
+| `create_user` | Create a player profile |
+| `login` | Verify a player and return saved scores |
+| `update_score` | Save a player's best score for a game |
+| `dashboard` | Return player names and scores for the dashboard |
 
-Set them in Supabase Function Secrets. Never put the service-role key in the firmware, dashboard, or repository.
+The prototype uses four-character directional passwords (`U`, `D`, `L`, `R`) and game keys such as `snake`, `pong`, `space_invaders`, `pacman`, `breakout`, and `tetris`.
 
-## Request format
+## Source fidelity
 
-Send a JSON POST to `/functions/v1/console-api` with an `action` field.
+**Important:** `index.ts` was reconstructed for this repository from the known API contract. It has not been verified against an exact export of the currently deployed Supabase function. Treat it as a reference/documentation snapshot, not a guaranteed deployable copy of the live backend.
 
-| Action | Extra fields | Purpose |
-|---|---|---|
-| `list_users` | none | List registered usernames |
-| `create_user` | `user_id`, `password` | Create an allowed player |
-| `login` | `user_id`, `password` | Return the player's saved scores |
-| `update_score` | `user_id`, `password`, `game`, `score` | Save a new personal best |
-| `dashboard` | none | Return all player names and high scores |
+Before using this code to redeploy, compare it with the deployed implementation, verify request/response formats against the firmware and dashboard, and test the full flow.
 
-Password format in the prototype is four characters from `U`, `D`, `L`, `R`. The game keys are `snake`, `pong`, `space_invaders`, `pacman`, `breakout`, and `tetris`.
+## Security limitations
 
-## Security warning
+This is a learning prototype, not production authentication. The known implementation stores directional passwords as plaintext, has a very small password space, and exposes user-list/dashboard actions to public-key callers. It lacks robust authentication, per-user authorization, and rate limiting. Do not use it for sensitive accounts or data.
 
-The current implementation is a prototype. Passwords are stored as plaintext, and dashboard/user-list actions are available to public-key callers. Do not use this as production authentication. Add proper password hashing/authentication, authorization, rate limiting, and restrict dashboard data before real-world use.
+Any privileged Supabase service-role key must remain in server-side secrets and must never be committed to this repository, browser code, or firmware.
