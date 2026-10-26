@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Console Connect — Player Dashboard</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0c0f;--panel:#15171d;--line:#2b2f38;--text:#f2f4f6;--muted:#969daa;--lime:#b6f36b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 5% 0%,#20291a 0,transparent 30%),var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}.shell{max-width:1180px;margin:auto;padding:30px 22px 48px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:36px}.brand{display:flex;gap:13px;align-items:center}.logo{width:45px;height:45px;border-radius:14px;background:var(--lime);color:#111;display:grid;place-items:center;font-weight:900;font-size:21px}.eyebrow{color:var(--lime);font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:800}h1{font-size:clamp(29px,4vw,40px);line-height:1.1;letter-spacing:-.05em;margin:8px 0}h2{font-size:18px;margin:0 0 12px}p{color:var(--muted);margin:0}.chip,button,input{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);padding:10px 13px;font:inherit}.chip{font-size:12px;color:var(--muted)}button{cursor:pointer}button:hover{border-color:var(--lime)}.summary{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0 26px}.stat{border:1px solid var(--line);background:var(--panel);border-radius:13px;padding:13px 16px;min-width:130px}.stat strong{font-size:21px;display:block}.stat span{color:var(--muted);font-size:12px}.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}.tools input{flex:1;min-width:220px}.status{color:var(--muted);font-size:12px;margin-bottom:14px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}.card{border:1px solid var(--line);background:linear-gradient(145deg,#171a20,#111318);border-radius:16px;padding:18px}.userhead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:15px}.username{font-size:18px;font-weight:800;overflow-wrap:anywhere}.tag{font-size:11px;color:var(--lime);border:1px solid #35452a;border-radius:8px;padding:4px 7px}.scores{display:grid;grid-template-columns:1fr 1fr;gap:8px}.score{border:1px solid var(--line);border-radius:10px;padding:10px}.score span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}.score strong{font-size:18px}.empty{padding:28px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center}.foot{margin-top:34px;font-size:12px;color:var(--muted)}a{color:var(--lime)}@media(max-width:500px){.shell{padding:22px 14px}.cards{grid-template-columns:1fr}}
+</style></head>
+<body><main class="shell"><header class="top"><div class="brand"><div class="logo">CC</div><div><div class="eyebrow">Console Connect / Player stats</div><h1>Player dashboard</h1><p>One console. Multiple players. Every personal best.</p></div></div><span class="chip" id="live">● CONNECTING</span></header>
+<section class="summary"><div class="stat"><strong id="userCount">—</strong><span>Players</span></div><div class="stat"><strong id="scoreCount">—</strong><span>Saved game records</span></div><div class="stat"><strong id="topScore">—</strong><span>Highest recorded score</span></div></section>
+<div class="tools"><input id="search" type="search" placeholder="Search players…" aria-label="Search players"><button id="refresh">Refresh data ↻</button></div><div class="status" id="status">Loading player data…</div><section id="cards" class="cards"><div class="empty">Connecting to Supabase…</div></section><p class="foot">Data is loaded from the Console Connect Supabase Edge Function. The browser uses only the public anon/publishable key; never place a service-role key in this page.</p></main>
+<script>
+// Public configuration only. Replace these placeholders before deploying.
+const API_URL = "https://YOUR_PROJECT_REF.supabase.co/functions/v1/console-api";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_OR_PUBLISHABLE_KEY";
+const games = [["snake","Snake"],["pong","Pong"],["space_invaders","Space Invaders"],["pacman","Pac-Man"],["breakout","Breakout"],["tetris","Tetris"]];
+let allUsers=[];
+const $=id=>document.getElementById(id);
+function scoreValue(v){return Number.isFinite(Number(v))?Number(v).toLocaleString("en-US"):"—"}
+async function load(){
+  $("live").textContent="● CONNECTING"; $("status").textContent="Loading player data…"; $("refresh").disabled=true;
+  try{
+    if(API_URL.includes("YOUR_PROJECT_REF")||SUPABASE_ANON_KEY.startsWith("YOUR_")) throw new Error("Set API_URL and SUPABASE_ANON_KEY in index.html first.");
+    const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY},body:JSON.stringify({action:"dashboard"})});
+    const data=await r.json(); if(!r.ok||!data.ok) throw new Error(data.error||`Request failed (${r.status})`);
+    allUsers=Array.isArray(data.users)?data.users:[]; render(); $("live").textContent="● LIVE DATA"; $("status").textContent=`Updated ${new Date().toLocaleTimeString()} · ${allUsers.length} player(s)`;
+  }catch(e){$("live").textContent="● CONNECTION ERROR";$("status").textContent=e.message;$("cards").innerHTML='<div class="empty">Could not load player data. Check the API URL, public key, and Edge Function.</div>';}
+  finally{$("refresh").disabled=false;}
+}
+function render(){
+ const query=$("search").value.trim().toLowerCase();const users=allUsers.filter(u=>(u.user_id||"").toLowerCase().includes(query));
+ const entries=allUsers.flatMap(u=>Object.values(u.scores||{}).map(Number).filter(Number.isFinite));
+ $("userCount").textContent=allUsers.length.toLocaleString();$("scoreCount").textContent=entries.length.toLocaleString();$("topScore").textContent=entries.length?Math.max(...entries).toLocaleString():"—";
+ if(!users.length){$("cards").innerHTML='<div class="empty">No players match your search.</div>';return;}
+ $("cards").innerHTML=users.map(u=>{const scores=u.scores||{};const count=games.filter(([k])=>scores[k]!==undefined).length;return `<article class="card"><div class="userhead"><div class="username">${escapeHtml(u.user_id||"Unknown player")}</div><span class="tag">${count}/6 GAMES</span></div><div class="scores">${games.map(([key,label])=>`<div class="score"><span>${label}</span><strong>${scores[key]===undefined?"—":scoreValue(scores[key])}</strong></div>`).join("")}</div></article>`}).join("");
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+$("refresh").addEventListener("click",load);$("search").addEventListener("input",render);load();
+</script></body></html>
